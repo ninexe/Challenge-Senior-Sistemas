@@ -11,8 +11,10 @@ import java.util.List;
 public interface GuestRepository extends JpaRepository<GuestModel, Long> {
     @Query("SELECT h FROM GuestModel h WHERE LOWER(h.name) LIKE LOWER(concat('%', :name, '%'))")
     List<GuestModel> findByName(@Param("name") String name);
+
     @Query("SELECT h FROM GuestModel h WHERE LOWER(h.document) = LOWER(:document)")
     List<GuestModel> findByDocument(@Param("document") String document);
+
     @Query("SELECT h FROM GuestModel h WHERE LOWER(h.phone) = LOWER(:phone)")
     List<GuestModel> findByPhone(@Param("phone") String phone);
 }

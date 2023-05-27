@@ -13,8 +13,11 @@ import java.util.List;
 @RequestMapping("/guest")
 public class GuestController {
 
-    @Autowired
-    private GuestService guestService;
+    private final GuestService guestService;
+
+    public GuestController(GuestService guestService) {
+        this.guestService = guestService;
+    }
 
     @PostMapping
     public List<GuestModel> createGuest(@RequestBody List<GuestModel> guest) {

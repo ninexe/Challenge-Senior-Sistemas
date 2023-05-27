@@ -12,8 +12,11 @@ import java.util.List;
 @RequestMapping("/reserve")
 public class ReserveController {
 
-    @Autowired
-    private ReserveService reserveService;
+    private final ReserveService reserveService;
+
+    public ReserveController(ReserveService reserveService) {
+        this.reserveService = reserveService;
+    }
 
     @PostMapping
     public ReserveModel createReserve(@RequestBody ReserveModel reserve) {

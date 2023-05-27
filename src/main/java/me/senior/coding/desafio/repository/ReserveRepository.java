@@ -25,6 +25,7 @@ public interface ReserveRepository extends JpaRepository<ReserveModel, Long> {
 
     @Query("SELECT h.totalAmount FROM ReserveModel h JOIN h.guests hp WHERE hp.document = :document ORDER BY h.id DESC")
     List<BigDecimal> findLastTotalAmountByGuest(@Param("document") String document);
+
     @Query(value = "SELECT reserve_id FROM guests WHERE guests.id = :id", nativeQuery = true)
     Long findReserveIdForeigKey(@Param("id") Long id);
 }
