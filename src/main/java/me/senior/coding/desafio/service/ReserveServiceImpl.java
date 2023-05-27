@@ -2,9 +2,10 @@ package me.senior.coding.desafio.service;
 
 import me.senior.coding.desafio.model.ReserveModel;
 import me.senior.coding.desafio.repository.ReserveRepository;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
@@ -24,49 +25,61 @@ public class ReserveServiceImpl implements ReserveService{
     }
 
     public ReserveModel createReserve(final ReserveModel reserve) {
-        ReserveModel entity = new ReserveModel();
-        if(reserve.getGuests() == null){
-            throw new IllegalArgumentException("Por favor, digite um hospede!");
+        if(reserve != null || !(reserve.getId() <= 0)){
+            ReserveModel entity = new ReserveModel();
+            if(reserve.getGuests() == null){
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Por favor, digite um hospede!");
+            }
+            if (reserve.getCheckInDate() == null) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Por favor, digite uma data de entrada!");
+            }
+            var guests = guestService.createGuest(reserve.getGuests());
+            entity.setGuests(guests);
+            entity.setCheckInDate(reserve.getCheckInDate());
+            entity.setCheckOutDate(reserve.getCheckOutDate());
+            entity.setHasGarage(reserve.isHasGarage());
+            entity.setTotalAmount(BigDecimal.ZERO);
+            if(entity.getCheckOutDate() != null){
+                entity.setTotalAmount(calculateTotalAmount(entity.getCheckInDate(),entity.getCheckOutDate()));
+            }
+            return reserveRepository.save(entity);
         }
-        var guests = guestService.createGuest(reserve.getGuests());
-        entity.setGuests(guests);
-        entity.setCheckInDate(reserve.getCheckInDate());
-        entity.setCheckOutDate(reserve.getCheckOutDate());
-        entity.setHasGarage(reserve.isHasGarage());
-        entity.setTotalAmount(reserve.getTotalAmount());
-
-        return reserveRepository.save(entity);
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Por favor, digite uma reserva corretamente!");
     }
 
     public ReserveModel getReserveById(Long id) {
-        return reserveRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Reserva não encontrada!"));
+        return reserveRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("Reserva %s não encontrada!", id)));
     }
 
     public ReserveModel updateReserve(Long id, ReserveModel reserve) {
-        if (!(reserve.getId() <= 0)) {
+        if(reserve != null || !(reserve.getId() <= 0)){
             ReserveModel existingReserve = reserveRepository.findById(id).orElse(null);
             if (existingReserve != null) {
                 if(reserve.getGuests() != null){
                     existingReserve.setGuests(reserve.getGuests());
                 }
-                existingReserve.setCheckInDate(reserve.getCheckInDate());
-                existingReserve.setCheckOutDate(reserve.getCheckOutDate());
+                if (reserve.getCheckInDate() != null) {
+                    existingReserve.setCheckInDate(reserve.getCheckInDate());
+                }
+                if (reserve.getCheckOutDate() != null) {
+                    existingReserve.setCheckOutDate(reserve.getCheckOutDate());
+                }
                 existingReserve.setHasGarage(reserve.isHasGarage());
                 existingReserve.setTotalAmount(BigDecimal.ZERO);
                 if(existingReserve.getCheckOutDate() != null){
                     existingReserve.setTotalAmount(calculateTotalAmount(existingReserve.getCheckInDate(),existingReserve.getCheckOutDate()));
                 }
-
                 return reserveRepository.save(existingReserve);
             }
         }
-        throw new IllegalArgumentException("Digite uma reserva válida!");
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Digite uma reserva válida!");
     }
 
     public void deleteReserve(Long id) {
         if (id == null || id <= 0) {
-            throw new IllegalArgumentException("reserva inválida!");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, String.format("Reserva %s não encontrado!", id));
         }
+        getReserveById(id);
         reserveRepository.deleteById(id);
     }
 
